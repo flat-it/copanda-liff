@@ -274,18 +274,27 @@ async function apiSubmitContact(payload) {
 /****************************************************
  * ページ判定 & 初期化実行
  ****************************************************/
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
 
     const path = location.pathname;
 
-    if (path.endsWith("index.html") || path.endsWith("/")) {
-        initIndexPage();
+    try {
+        if (path.endsWith("index.html") || path.endsWith("/")) {
+            // しっかり await して完了を待つ
+            await initIndexPage();
+        }
+        else if (path.endsWith("register_guardian.html")) {
+            await initRegisterPage();
+        }
+        else if (path.endsWith("contact_list.html")) {
+            await initContactListPage();
+        }
+    } catch (err) {
+        console.error("Initialization failed:", err);
+        // エラーが見えるように loading 領域に表示
+        const loading = document.getElementById("loading");
+        if (loading) {
+            loading.innerHTML = `<p>初期化エラーが発生しました。<br>${err.message}</p>`;
+        }
     }
-    else if (path.endsWith("register_guardian.html")) {
-        initRegisterPage();
-    }
-    else if (path.endsWith("contact_list.html")) {
-        initContactListPage();
-    }
-    // contact_form.html は contact_form.js 側が制御
 });
