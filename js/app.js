@@ -299,3 +299,20 @@ document.addEventListener("DOMContentLoaded", async () => {
         }
     }
 });
+
+// ===== 他JS（contact_form.js 等）から使うために公開 =====
+window.restoreAuthCode = restoreAuthCode;
+window.callApi = callApi;
+window.apiGetKids = apiGetKids;
+window.apiGetCalendar = apiGetCalendar;
+window.apiSubmitContact = apiSubmitContact;
+
+// AUTH_CODE は参照・更新されるので getter/setter で公開
+Object.defineProperty(window, "AUTH_CODE", {
+  get() {
+    return AUTH_CODE;
+  },
+  set(v) {
+    AUTH_CODE = v;
+  }
+});
