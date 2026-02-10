@@ -3,6 +3,15 @@
  ****************************************************/
 import { ENV } from "./env.js";
 
+/****************************************************
+ * ★ デバッグ用：localStorage 強制リセット
+ ****************************************************/
+if (location.search.includes("reset=1")) {
+  console.warn("Reset flag detected. Clearing localStorage...");
+  localStorage.clear();
+  alert("localStorage cleared");
+}
+
 const LIFF_ID = ENV.LIFF_ID;
 const API_URL = ENV.API_URL;
 
