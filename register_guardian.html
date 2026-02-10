@@ -1,39 +1,67 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>保護者 初回登録</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>保護者 初回登録</title>
 
-    <link rel="stylesheet" href="./css/base.css" />
-    <script src="https://static.line-scdn.net/liff/edge/versions/2.21.2/sdk.js"></script>
-    <!--<script type="module" src="js/app.js"></script>-->
-    <script src="js/app.js"></script>
+  <link rel="stylesheet" href="./css/base.css" />
+
+  <!-- LIFF SDK（直アクセス対策済み構成） -->
+  <script src="https://static.line-scdn.net/liff/edge/versions/2.21.2/sdk.js"></script>
+  <script src="js/app.js"></script>
 </head>
 
 <body>
-<header>
-  <header class="app-header">
-    <div class="header-inner">
-      <span class="app-title">幼稚園連絡システム copanda</span>
-      <a href="index.html" class="home-link" aria-label="ホームへ戻る">🏠</a>
+
+<header class="app-header">
+  <div class="header-inner">
+    <span class="app-title">幼稚園連絡システム copanda</span>
+    <a href="index.html" class="home-link" aria-label="ホームへ戻る">🏠</a>
+  </div>
+</header>
+
+<main class="page-container">
+
+  <h2 class="page-title">保護者 初回登録</h2>
+
+  <p>
+    初めてアクセスする方は、以下のフォームから利用開始手続きを行ってください。<br>
+    園から配布された <strong>認証コード</strong> と <strong>メールアドレス</strong> を入力します。
+  </p>
+
+  <section class="form-section">
+
+    <div class="row">
+      <label for="authCode">認証コード（園から配布）</label>
+      <input
+        type="text"
+        id="authCode"
+        placeholder="例：ABC123"
+        autocomplete="one-time-code"
+      />
     </div>
-　　<h2>保護者 初回登録</h2>      
-  </header>
-    
-<main>
-    <p>初めてアクセスする方は以下フォームから利用開始手続きを行うことができます。<br>認証コードとメールアドレスを入力してください。</p>
 
-    <div class="form-block">
-        <label>認証コード（園から配布）</label>
-        <input type="text" id="authCode" />
-
-        <label>メールアドレス</label>
-        <input type="email" id="email" />
-
-        <button id="btnRegister">登録する</button>
-        <p id="msg"></p>
+    <div class="row">
+      <label for="email">メールアドレス</label>
+      <input
+        type="email"
+        id="email"
+        placeholder="例：sample@example.com"
+        autocomplete="email"
+      />
     </div>
+
+    <div class="btn-row">
+      <button id="btnRegister" class="menu-btn">
+        登録する
+      </button>
+    </div>
+
+    <p id="msg" aria-live="polite"></p>
+
+  </section>
+
 </main>
 
 </body>
