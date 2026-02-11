@@ -12,12 +12,9 @@ if (location.search.includes("reset=1")) {
   alert("localStorage cleared");
 }
 
-const LIFF_ID= "2008634162-jVqAPKrD";
-const API_URL=
-  "https://prod-13.japaneast.logic.azure.com:443/workflows/7d86cca357d74a499d659ccfddac499c/triggers/When_an_HTTP_request_is_received/paths/invoke?api-version=2016-10-01&sp=%2Ftriggers%2FWhen_an_HTTP_request_is_received%2Frun&sv=1.0&sig=qalRj8hNDNVdcAXhZ7cpC6KahERkg5W3NcBcPseEl14";
-
-//const LIFF_ID = ENV.LIFF_ID;
-//const API_URL = ENV.API_URL;
+const ENV = window.ENV || {};
+const LIFF_ID = ENV.LIFF_ID;
+const API_URL = ENV.API_URL;
 
 // ★ 認証後に保存する authcode
 let AUTH_CODE = null;
