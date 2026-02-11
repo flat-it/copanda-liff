@@ -320,6 +320,10 @@ function enterEditMode(d) {
   } else if (btnDelete) {
     btnDelete.style.display = "none";
   }
+  // 期限切れなら送信不可
+  if (selectedDate && isAfterCancelLimit(selectedDate)) {
+    if (btnSubmit) btnSubmit.disabled = true;
+  }
   
   // 期限切れ注意文
   if (notice) {
@@ -336,6 +340,12 @@ function enterEditMode(d) {
 function restoreFormDetail(d) {
   if (!d) return;
 
+  /* =========================
+   * ② フォーム構造切替（連絡種別）
+   * ========================= */
+  //理由が復元しないため理由より上に移動
+  updateFormByType();
+  
   /* =========================
    * ⑤ 理由
    * ========================= */
@@ -444,8 +454,10 @@ function restoreFormDetail(d) {
   /* =========================
    * ② フォーム構造切替（連絡種別）
    * ========================= */
+  /* 理由が復元しないため理由より上に移動
   updateFormByType();
-
+  */
+  
   /* =========================
    * ⑬ 預かり保育／長期（お迎え時間再計算）
    * ========================= */
@@ -748,30 +760,32 @@ function updateFormByType() {
   
   // 給食エリアを表示すべきかどうかの判定フラグ
   // 新規ならカレンダー定義、編集なら既にデータがあるかどうかも見る
-  const isLunchTarget = (calendarData?.lunchDates ?? []).includes(selectedDate);
+//  const isLunchTarget = (calendarData?.lunchDates ?? []).includes(selectedDate);
   // 編集モードで、かつ既に値がある場合も表示対象とする
-  const hasLunchData = (mode === "edit" && document.querySelector("input[name=lunch]:checked"));
+  //const hasLunchData = (mode === "edit" && document.querySelector("input[name=lunch]:checked"));
 
   // 欠席
   if (contactType === "欠席") {
     show("row-baggage");
-    if (isLunchTarget || hasLunchData) {
-      show("row-lunch");
+/*
+if (isLunchTarget || hasLunchData) {
+//      show("row-lunch");
       // 欠席の場合は前述の通り「不要」固定
       const lunchRadios = document.querySelectorAll("input[name=lunch]");
       const lunchNo = document.querySelector("input[name=lunch][value='不要']");
       if (lunchNo) lunchNo.checked = true;
       lunchRadios.forEach(r => r.disabled = true);
     }
+    */
   }
 
   // 遅刻
   if (contactType === "遅刻") {
     show("row-send");
     setSendTimes();
-    if (isLunchTarget || hasLunchData) {
-      show("row-lunch");
-    }
+    //if (isLunchTarget || hasLunchData) {
+//      show("row-lunch");
+    //}
   }
 
   // 早退
@@ -779,9 +793,9 @@ function updateFormByType() {
     show("row-pickup");
     setPickupTimesForLeave();
     show("row-guardian");
-    if (isLunchTarget || hasLunchData) {
-      show("row-lunch");
-    }
+    //if (isLunchTarget || hasLunchData) {
+//      show("row-lunch");
+    //}
   }
  
   if (contactType === "園バス") {
@@ -945,6 +959,7 @@ async function onSubmitContact() {
     }
 
     // 指摘④, ⑥: 給食日の給食有無チェック
+    /*
     const isLunchDay = (calendarData?.lunchDates ?? []).includes(selectedDate);
     if (isLunchDay && ["遅刻", "早退", "欠席"].includes(contactType)) {
         if (!document.querySelector("input[name=lunch]:checked")) {
@@ -952,6 +967,7 @@ async function onSubmitContact() {
             return;
         }
     }
+    */
 
     // 指摘⑤, ⑨: 保護者選択チェック
     if (["早退", "園バス"].includes(contactType)) {
@@ -1034,14 +1050,14 @@ function buildSubmitPayload() {
     payload.baggage =
       document.querySelector("input[name=baggage]:checked")?.value || null;
 
-    payload.lunch =
-      document.querySelector("input[name=lunch]:checked")?.value || null;
+//    payload.lunch =
+//      document.querySelector("input[name=lunch]:checked")?.value || null;
   }
 
   if (contactType === "遅刻") {
     payload.sendTime = document.getElementById("send")?.value || null;
-    payload.lunch =
-      document.querySelector("input[name=lunch]:checked")?.value || null;
+//    payload.lunch =
+//      document.querySelector("input[name=lunch]:checked")?.value || null;
   }
 
   if (contactType === "早退") {
@@ -1051,8 +1067,8 @@ function buildSubmitPayload() {
     payload.guardianOther =
       document.getElementById("guardianOther")?.value || null;
 
-    payload.lunch =
-      document.querySelector("input[name=lunch]:checked")?.value || null;
+//    payload.lunch =
+//      document.querySelector("input[name=lunch]:checked")?.value || null;
   }
 
   if (contactType === "園バス") {
@@ -1138,8 +1154,8 @@ function buildUpdatePayload() {
     payload.sendTime =
       document.getElementById("send")?.value || null;
 
-    payload.lunch =
-      document.querySelector("input[name=lunch]:checked")?.value || null;
+    //payload.lunch =
+    //  document.querySelector("input[name=lunch]:checked")?.value || null;
   }
 
   // ===== 早退 =====
@@ -1153,8 +1169,8 @@ function buildUpdatePayload() {
     payload.guardianOther =
       document.getElementById("guardianOther")?.value || null;
 
-    payload.lunch =
-      document.querySelector("input[name=lunch]:checked")?.value || null;
+    //payload.lunch =
+    //  document.querySelector("input[name=lunch]:checked")?.value || null;
   }
 
   // ===== 園バス =====
