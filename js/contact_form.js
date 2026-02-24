@@ -464,8 +464,22 @@ async function loadKids() {
 // ============================================================
 async function onKidSelected() {
   const id = document.querySelector("input[name=kid]:checked")?.value;
-  selectedKid = kidsData.find(k => k.kidsid === id);
-  if (!selectedKid) return;
+  const found = kidsData.find(k => k.kidsid === id);
+  if (!found) return;
+
+  // extrac_xxx を含む全フィールドを保持
+  selectedKid = {
+    kidsid:         found.kidsid,
+    name:           found.name,
+    class:          found.class,
+    lunchAvailable: found.lunchAvailable,
+    busUser:        found.busUser,
+    extrac_mon:     found.extrac_mon  ?? null,
+    extrac_tue:     found.extrac_tue  ?? null,
+    extrac_wed:     found.extrac_wed  ?? null,
+    extrac_thu:     found.extrac_thu  ?? null,
+    extrac_fri:     found.extrac_fri  ?? null
+  };
 
   // 状態リセット
   selectedDate = null;
@@ -629,6 +643,11 @@ function updateFormByType() {
   if (["預かり保育", "長期"].includes(contactType)) {
     updatePickupForCare();
   }
+
+  // 預かり保育：課外選択肢の制御
+  if (contactType === "預かり保育") {
+    applyExtracOptions();
+  }
 }
 
 // ============================================================
@@ -645,6 +664,8 @@ document.addEventListener("change", (e) => {
         document.querySelectorAll("input[name=normal_base]").forEach(r => r.checked = false);
       }
     }
+    // 午後ONになったタイミングでも選択肢を再制御
+    if (e.target.checked) applyExtracOptions();
   }
 
   // 長期：ショート／ロング切替
@@ -669,6 +690,34 @@ document.addEventListener("change", (e) => {
 });
 
 // ============================================================
+// ============================================================
+// 預かり保育：課外選択肢の表示制御
+// isExtracDay() が true → 「課外後1」「課外後2」のみ選択可
+// isExtracDay() が false → 「通常」のみ選択可
+// ============================================================
+function applyExtracOptions() {
+  const area = document.getElementById("normal_afternoon_options");
+  if (!area) return;
+
+  const extrac = isExtracDay();
+
+  document.querySelectorAll("input[name=normal_base]").forEach(r => {
+    const isExtracOption = ["課外後1", "課外後2"].includes(r.value);
+    const isNormalOption = r.value === "通常";
+
+    if (extrac) {
+      r.disabled = isNormalOption;
+      if (isNormalOption && r.checked) r.checked = false;
+    } else {
+      r.disabled = isExtracOption;
+      if (isExtracOption && r.checked) r.checked = false;
+    }
+
+    const label = r.closest("label");
+    if (label) label.style.opacity = r.disabled ? "0.4" : "1.0";
+  });
+}
+
 // アレルギー表示制御
 // ============================================================
 function setupAllergyUI() {
@@ -992,6 +1041,28 @@ function isAfterCancelLimit(dateStr) {
   const now    = new Date();
   const target = new Date(dateStr + "T09:10:00");
   return now.toDateString() === target.toDateString() && now > target;
+}
+
+// ============================================================
+// 課外クラス表示可否判定
+// 選択日が extrac カレンダーに含まれ、かつ
+// 園児の該当曜日の extrac_xxx が true の場合のみ true
+// ============================================================
+function isExtracDay() {
+  if (!selectedDate || !selectedKid || !calendarData?.extrac) return false;
+
+  // 選択日が課外カレンダーに含まれるか
+  if (!calendarData.extrac.includes(selectedDate)) return false;
+
+  // 選択日の曜日（0=日, 1=月, 2=火, 3=水, 4=木, 5=金, 6=土）
+  const dayIndex = new Date(selectedDate).getDay();
+  const dayKeys  = [null, "extrac_mon", "extrac_tue", "extrac_wed", "extrac_thu", "extrac_fri", null];
+  const key      = dayKeys[dayIndex];
+
+  // 日・土は課外なし
+  if (!key) return false;
+
+  return selectedKid[key] === true;
 }
 
 function setSendTimes() {
