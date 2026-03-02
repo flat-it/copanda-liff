@@ -5,6 +5,7 @@
   // ===== 開発環境（GitHub Pages / localhost）=====
   if (
     host.includes("github.io") ||
+	host.includes("white-meadow") ||
     host === "localhost" ||
     host === "127.0.0.1"
   ) {
