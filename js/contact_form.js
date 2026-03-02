@@ -648,6 +648,11 @@ function updateFormByType() {
   if (contactType === "預かり保育") {
     applyExtracOptions();
   }
+
+  // 長期：課外選択肢の制御
+  if (contactType === "長期") {
+    applyExtracOptionsForLong();
+  }
 }
 
 // ============================================================
@@ -675,6 +680,7 @@ document.addEventListener("change", (e) => {
       r.checked  = false;
       r.disabled = isLong;
     });
+    applyExtracOptionsForLong();
   }
 
   // お迎え時間の再計算
@@ -716,6 +722,35 @@ function applyExtracOptions() {
     const label = r.closest("label");
     if (label) label.style.opacity = r.disabled ? "0.4" : "1.0";
   });
+}
+
+// ============================================================
+// 長期：課外選択肢の表示制御
+// isExtracDay() が true  → 「課外後1」「課外後2」選択可
+// isExtracDay() が false → 「課外後1」「課外後2」選択不可
+// ※ ロング選択中は本関数の結果に関わらず long_extra は disabled のまま
+// ============================================================
+function applyExtracOptionsForLong() {
+  const extrac = isExtracDay();
+  const isLong = document.querySelector("input[name=long_base]:checked")?.value === "ロング";
+
+  document.querySelectorAll("input[name=long_extra]").forEach(r => {
+    // ロング選択中は課外不可（既存ロジックを優先）
+    if (isLong) {
+      r.disabled = true;
+      r.checked  = false;
+    } else {
+      // 課外参加日でなければ選択不可
+      r.disabled = !extrac;
+      if (!extrac && r.checked) r.checked = false;
+    }
+
+    const label = r.closest("label");
+    if (label) label.style.opacity = r.disabled ? "0.4" : "1.0";
+  });
+
+  // お迎え時間も更新
+  updatePickupForCare();
 }
 
 // アレルギー表示制御
