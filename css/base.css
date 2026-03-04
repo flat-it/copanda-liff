@@ -57,9 +57,11 @@ body {
   box-sizing: border-box;
   font-size: 16px;
   margin: 0 auto 12px auto;
+  border: none;
+  cursor: pointer;
 }
 
-/* disabled（2重送信防止） */
+/* disabled（2重送信防止・チェックボックス未確認） */
 .menu-btn:disabled {
   background: #ccc;
   color: #888;
@@ -282,6 +284,74 @@ input[type="checkbox"],
 input[type="radio"] {
   transform: scale(1.2);
   margin-right: 6px;
+}
+
+/* ================================
+   利用規約・個人情報 同意チェック
+================================ */
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checkbox-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px; /* テキストとの縦位置調整 */
+  width: auto;
+}
+
+.checkbox-row label {
+  display: inline;
+  margin-bottom: 0;
+  font-size: 14px;
+  color: #333;
+}
+
+.checkbox-row a {
+  color: #c93056;
+  text-decoration: underline;
+}
+
+.checkbox-row a:hover {
+  opacity: 0.8;
+}
+
+/* ================================
+   利用規約・個人情報チェックボックス行
+================================ */
+.checkbox-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 10px;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.checkbox-row input[type="checkbox"] {
+  flex-shrink: 0;
+  margin-top: 3px; /* テキストとの縦位置を合わせる */
+  width: auto;
+}
+
+.checkbox-row label {
+  display: inline;
+  font-size: 14px;
+  margin-bottom: 0;
+  color: #333;
+}
+
+.checkbox-row a {
+  color: #c93056;
+  text-decoration: underline;
+}
+
+.checkbox-row a:hover {
+  opacity: 0.8;
 }
 
 /* ================================
