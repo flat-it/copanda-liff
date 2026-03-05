@@ -34,6 +34,7 @@
   <div class="row">
     <h3><span id="viewContactType" class="view-text"></span></h3>
   </div>
+
   <!-- =========================
      ★ 表示モード（新設）
      ========================= -->
@@ -75,12 +76,7 @@
 
     <!-- ② 日付選択（折り畳み） -->
     <div class="row hidden" id="calendarArea">
-      <label>日程（白:通常 黄色:給食あり 緑:午前）</label>
-
-      <div id="childcareStatus" class="row hidden">
-        <label>本日の預かり保育</label>
-        <div id="childcareStatusText"></div>
-      </div>
+      <label>日程（白:通常 黄色:給食あり 緑:午前 *:課外クラス）</label>
 
       <!-- 選択済み日付表示（トグル） -->
       <button type="button" id="selectedDateBox" class="date-box">
@@ -103,6 +99,12 @@
   <!-- ③ フォーム本体 -->
   <div id="formBody" class="form-section" style="display:none;">
 
+    <!-- ★ 預かり保育定員情報（日付選択後に表示） -->
+    <div id="childcareStatus" class="row hidden">
+      <label>本日の預かり保育</label>
+      <div id="childcareStatusText"></div>
+    </div>
+
     <div class="row" id="row-baggage">
       <label>荷物持ち帰り</label>
       <label class="inline-label"><input type="radio" name="baggage" value="園受け取り">園受け取り</label>
@@ -110,6 +112,7 @@
       <label class="inline-label"><input type="radio" name="baggage" value="兄弟児に持たせる">兄弟児に持たせる</label>
       <label class="inline-label"><input type="radio" name="baggage" value="しない">しない</label>
     </div>
+
     <!-- ★ 預かり保育／長期預かり保育 -->
     <div class="row" id="row-care" style="display:none;">
     
@@ -142,6 +145,10 @@
             課外後2
           </label>
         </div>
+        <!-- 預かり保育：通常選択時警告 -->
+        <p id="extracNormalWarning" style="display:none; color:#c93056; margin-top:6px;">
+          課外クラス設定日ですが通常で良いですか？
+        </p>
       </div>
     
       <!-- ===== 長期 預かり保育 ===== -->
@@ -177,6 +184,11 @@
             課外後2
           </label>
         </div>
+
+        <!-- 長期：通常（ショート＋課外後未選択）時警告 -->
+        <p id="extracNormalWarningLong" style="display:none; color:#c93056; margin-top:6px;">
+          課外クラス設定日ですが通常で良いですか？
+        </p>
       </div>
   
     </div>
@@ -263,6 +275,7 @@
     </div>
     
   </div>
+
   <!-- ★ キャンセル操作エリア（編集モード用） -->
   <div class="row" id="cancelArea">
     <!-- キャンセル期限切れメッセージ -->

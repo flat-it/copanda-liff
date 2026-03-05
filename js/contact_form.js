@@ -530,6 +530,11 @@ function renderCalendarGrid({ calendar, lunchDates, morningDates }) {
   const months = Object.keys(byMonth).sort();
   if (!currentYearMonth) currentYearMonth = months[0];
 
+  // 課外クラス参加園児かどうか（いずれかの曜日が true なら参加）
+  const isExtracKid = selectedKid && [
+    "extrac_mon","extrac_tue","extrac_wed","extrac_thu","extrac_fri"
+  ].some(k => selectedKid[k] === true);
+
   draw();
 
   function draw() {
@@ -580,7 +585,13 @@ function renderCalendarGrid({ calendar, lunchDates, morningDates }) {
         cell.textContent = d;
       } else {
         cell.className   = "cal-day selectable";
-        cell.textContent = d;
+
+        // * 付与判定：課外参加園児 かつ 課外カレンダーに含まれる日
+        const isExtracDate = isExtracKid &&
+          (calendarData?.extrac ?? []).includes(dateStr);
+
+        cell.textContent = isExtracDate ? `${d}*` : d;
+
         if ((lunchDates   ?? []).includes(dateStr)) cell.classList.add("lunch");
         if ((morningDates ?? []).includes(dateStr)) cell.classList.add("morning");
         cell.onclick = async (e) => onDateSelected(dateStr, e.currentTarget);
@@ -667,6 +678,8 @@ document.addEventListener("change", (e) => {
       area.style.display = e.target.checked ? "block" : "none";
       if (!e.target.checked) {
         document.querySelectorAll("input[name=normal_base]").forEach(r => r.checked = false);
+        // 午後OFFで警告も消す
+        updateNormalWarning();
       }
     }
     // 午後ONになったタイミングでも選択肢を再制御
@@ -681,12 +694,26 @@ document.addEventListener("change", (e) => {
       r.disabled = isLong;
     });
     applyExtracOptionsForLong();
+    // ロング選択時は警告不要（課外選択できないため）
+    updateLongWarning();
   }
 
-  // お迎え時間の再計算
+  // 預かり保育：通常 / 課外後1 / 課外後2 の選択変化
+  if (e.target?.name === "normal_base") {
+    updateNormalWarning();
+    updatePickupForCare();
+  }
+
+  // 長期：課外後1 / 課外後2 の選択変化
+  if (e.target?.name === "long_extra") {
+    updateLongWarning();
+    updatePickupForCare();
+  }
+
+  // お迎え時間の再計算（既存トリガー維持）
   const pickupTriggers = [
     "normal_morning", "normal_afternoon",
-    "normal_base", "long_base", "long_extra"
+    "long_base", "long_extra"
   ];
   if (pickupTriggers.some(id =>
     e.target?.id === id || e.target?.name === id
@@ -696,27 +723,54 @@ document.addEventListener("change", (e) => {
 });
 
 // ============================================================
+// 預かり保育：「通常」選択時の赤字警告表示制御
+// 課外開催日に「通常」を選んだ場合のみ警告を表示する
+// ============================================================
+function updateNormalWarning() {
+  const warning = document.getElementById("extracNormalWarning");
+  if (!warning) return;
+
+  const selectedBase = document.querySelector("input[name=normal_base]:checked")?.value;
+  const show = isExtracDay() && selectedBase === "通常";
+  warning.style.display = show ? "block" : "none";
+}
+
+// ============================================================
+// 長期：「通常（ショート）」選択時の赤字警告表示制御
+// 課外開催日にショートかつ課外後未選択（＝通常扱い）の場合に警告表示
+// ============================================================
+function updateLongWarning() {
+  const warning = document.getElementById("extracNormalWarningLong");
+  if (!warning) return;
+
+  const base  = document.querySelector("input[name=long_base]:checked")?.value;
+  const extra = document.querySelector("input[name=long_extra]:checked")?.value;
+  // ショート選択中、かつ課外後が未選択（通常扱い）の場合に警告
+  const show = isExtracDay() && base === "ショート" && !extra;
+  warning.style.display = show ? "block" : "none";
+}
+
 // ============================================================
 // 預かり保育：課外選択肢の表示制御
-// isExtracDay() が true → 「課外後1」「課外後2」のみ選択可
-// isExtracDay() が false → 「通常」のみ選択可
+//   課外参加園児 かつ 課外開催日　→ 通常〇（警告あり）/ 課外後1・2〇
+//   それ以外　　　　　　　　　　　→ 通常〇 / 課外後1・2 disabled
 // ============================================================
 function applyExtracOptions() {
   const area = document.getElementById("normal_afternoon_options");
   if (!area) return;
 
-  const extrac = isExtracDay();
+  const extrac = isExtracDay(); // 課外参加園児 かつ 課外開催日
 
   document.querySelectorAll("input[name=normal_base]").forEach(r => {
     const isExtracOption = ["課外後1", "課外後2"].includes(r.value);
-    const isNormalOption = r.value === "通常";
 
-    if (extrac) {
-      r.disabled = isNormalOption;
-      if (isNormalOption && r.checked) r.checked = false;
+    if (isExtracOption) {
+      // 課外後1・2：課外開催日のみ選択可
+      r.disabled = !extrac;
+      if (!extrac && r.checked) r.checked = false;
     } else {
-      r.disabled = isExtracOption;
-      if (isExtracOption && r.checked) r.checked = false;
+      // 通常：常時選択可
+      r.disabled = false;
     }
 
     const label = r.closest("label");
@@ -726,24 +780,18 @@ function applyExtracOptions() {
 
 // ============================================================
 // 長期：課外選択肢の表示制御
-// isExtracDay() が true  → 「課外後1」「課外後2」選択可
-// isExtracDay() が false → 「課外後1」「課外後2」選択不可
-// ※ ロング選択中は本関数の結果に関わらず long_extra は disabled のまま
+//   課外参加園児 かつ 課外開催日　→ 課外後1・2〇（ロング時は除く）
+//   それ以外　　　　　　　　　　　→ 課外後1・2 disabled
+//   ロング選択中　　　　　　　　　→ 課外後1・2 disabled（既存ロジック維持）
 // ============================================================
 function applyExtracOptionsForLong() {
-  const extrac = isExtracDay();
   const isLong = document.querySelector("input[name=long_base]:checked")?.value === "ロング";
+  const extrac = isExtracDay(); // 課外参加園児 かつ 課外開催日
 
   document.querySelectorAll("input[name=long_extra]").forEach(r => {
-    // ロング選択中は課外不可（既存ロジックを優先）
-    if (isLong) {
-      r.disabled = true;
-      r.checked  = false;
-    } else {
-      // 課外参加日でなければ選択不可
-      r.disabled = !extrac;
-      if (!extrac && r.checked) r.checked = false;
-    }
+    // ロング選択中 または 課外開催日でない場合は disabled
+    r.disabled = isLong || !extrac;
+    if (r.disabled && r.checked) r.checked = false;
 
     const label = r.closest("label");
     if (label) label.style.opacity = r.disabled ? "0.4" : "1.0";
@@ -753,6 +801,7 @@ function applyExtracOptionsForLong() {
   updatePickupForCare();
 }
 
+// ============================================================
 // アレルギー表示制御
 // ============================================================
 function setupAllergyUI() {
