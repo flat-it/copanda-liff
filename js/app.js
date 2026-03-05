@@ -218,6 +218,10 @@ async function initRegisterPage() {
 
 /****************************************************
  * contact_list.html：連絡履歴一覧を取得して表示
+ *
+ * dateFrom ロジック（ローカル日付基準）:
+ *   当日が 4/30 以前（月<=4）→ 前年の 4/1
+ *   当日が 5/1  以降（月>=5）→ 本年の 4/1
  ****************************************************/
 async function initContactListPage() {
 
@@ -234,10 +238,21 @@ async function initContactListPage() {
         return;
     }
 
+    // ローカル日付で月を判定
+    const now = new Date();
+    const localMonth = now.getMonth() + 1; // 1〜12
+    const localYear  = now.getFullYear();
+
+    // 4月以前（1〜4月）は前年度の4/1、5月以降は本年の4/1
+    const fromYear = localMonth <= 4 ? localYear - 1 : localYear;
+    const dateFrom = `${fromYear}-04-01`;
+
+    console.log("contact_list dateFrom:", dateFrom);
+
     const res = await callApi({
         action: "get_contacts",
         authCode: AUTH_CODE,
-        dateFrom: "1970-01-01"
+        dateFrom: dateFrom
     });
 
     loading.style.display = "none";
