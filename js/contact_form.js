@@ -1005,7 +1005,7 @@ function buildSubmitPayload() {
   const payload = {
     ...buildCommonPayload(),
     action:  "submit_contact",
-    lineId:  localStorage.getItem("LINE_ID") || null,
+    lineId: localStorage.getItem(window.storageKey("LINE_ID")) || null,
     date:    selectedDate,
     kid:     selectedKid.kidsid,
     busUser: selectedKid.busUser

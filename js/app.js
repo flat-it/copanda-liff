@@ -1,35 +1,40 @@
 /****************************************************
  * 設定
  ****************************************************/
-//import { ENV } from "./env.js";
-
-/****************************************************
- * ★ デバッグ用：localStorage 強制リセット
- ****************************************************/
-if (location.search.includes("reset=1")) {
-  console.warn("Reset flag detected. Clearing localStorage...");
-  localStorage.clear();
-  alert("localStorage cleared");
-}
-
 const ENV = window.ENV || {};
 const LIFF_ID = ENV.LIFF_ID;
 const API_URL = ENV.API_URL;
+const ENV_NAME = ENV.ENV_NAME || "prod";  // ★ 追加
 
-// ★ 認証後に保存する authcode
+// ★ 環境プレフィックス付きのストレージキー生成ヘルパー
+function storageKey(name) {
+    return `${ENV_NAME}_${name}`;
+}
+
 let AUTH_CODE = null;
+
+
+/****************************************************
+ * デバッグ用：localStorage 強制リセット
+ ****************************************************/
+if (location.search.includes("reset=1")) {
+    console.warn("Reset flag detected. Clearing localStorage...");
+    localStorage.clear();
+    alert("localStorage cleared");
+}
 
 
 /****************************************************
  * localStorage から AUTH_CODE を復元
  ****************************************************/
 function restoreAuthCode() {
-    const saved = localStorage.getItem("AUTH_CODE");
+    const saved = localStorage.getItem(storageKey("AUTH_CODE"));  // ★
     if (saved) {
         AUTH_CODE = saved;
-        console.log("RESTORED AUTH_CODE:", AUTH_CODE);
+        console.log("RESTORED AUTH_CODE:", AUTH_CODE, `(env: ${ENV_NAME})`);
     }
 }
+
 
 /****************************************************
  * LIFF 初期化
@@ -81,7 +86,7 @@ async function initIndexPage() {
     const menu = document.getElementById("menu");
     const guardianNameLabel = document.getElementById("guardianName");
 
-    restoreAuthCode();  // ★ AUTH_CODE 復元
+    restoreAuthCode();
 
     const profile = await initLIFF();
     if (!profile) {
@@ -90,11 +95,10 @@ async function initIndexPage() {
     }
 
     const lineId = profile.userId;
-    localStorage.setItem("LINE_ID", lineId);
+    localStorage.setItem(storageKey("LINE_ID"), lineId);  // ★
 
     let result = null;
 
-    // ★ AUTH_CODE がないときだけ check_guardian
     if (!AUTH_CODE) {
         result = await callApi({
             action: "check_guardian",
@@ -112,12 +116,11 @@ async function initIndexPage() {
         }
 
         AUTH_CODE = result.authCode;
-        localStorage.setItem("AUTH_CODE", AUTH_CODE);
-        localStorage.setItem("GUARDIAN_NAME", result.guardianName);
+        localStorage.setItem(storageKey("AUTH_CODE"), AUTH_CODE);          // ★
+        localStorage.setItem(storageKey("GUARDIAN_NAME"), result.guardianName);  // ★
         guardianNameLabel.textContent = `${result.guardianName} さん`;
     } else {
-        // ★ 既ログイン（通信しない）
-        const name = localStorage.getItem("GUARDIAN_NAME");
+        const name = localStorage.getItem(storageKey("GUARDIAN_NAME"));  // ★
         if (name) guardianNameLabel.textContent = `${name} さん`;
     }
 
@@ -129,17 +132,16 @@ async function initIndexPage() {
 
 
 /****************************************************
- * 本日以降の連絡一覧を取得して表示（JSTで送信）
+ * 本日以降の連絡一覧を取得して表示
  ****************************************************/
 async function loadUpcomingContacts() {
     if (!AUTH_CODE) return;
 
-    // 今日の日付を生成
     const now = new Date();
     const year = now.getUTCFullYear();
     const month = String(now.getUTCMonth() + 1).padStart(2, "0");
     const day = String(now.getUTCDate()).padStart(2, "0");
-    const today = `${year}-${month}-${day}`;  // 例: 2025-12-11
+    const today = `${year}-${month}-${day}`;
 
     console.log("dateFrom:", today);
 
@@ -158,26 +160,25 @@ async function loadUpcomingContacts() {
     }
 
     res.items.forEach(c => {
-      const li = document.createElement("li");
-      li.className = "contact-item";
-    
-      const a = document.createElement("a");
-      a.className = "contact-row";
-      a.href = `contact_form.html?mode=edit&contactId=${encodeURIComponent(c.contactId)}&type=${encodeURIComponent(c.type)}`;
-    
-      const text = document.createElement("span");
-      text.className = "contact-text";
-      text.textContent = `${c.date} ${c.name ?? ""}`;
-    
-      const type = document.createElement("span");
-      type.className = "contact-type";
-      type.textContent = c.type;
-    
-      a.append(text, type);
-      li.appendChild(a);
-      ul.appendChild(li);
-    });
+        const li = document.createElement("li");
+        li.className = "contact-item";
 
+        const a = document.createElement("a");
+        a.className = "contact-row";
+        a.href = `contact_form.html?mode=edit&contactId=${encodeURIComponent(c.contactId)}&type=${encodeURIComponent(c.type)}`;
+
+        const text = document.createElement("span");
+        text.className = "contact-text";
+        text.textContent = `${c.date} ${c.name ?? ""}`;
+
+        const type = document.createElement("span");
+        type.className = "contact-type";
+        type.textContent = c.type;
+
+        a.append(text, type);
+        li.appendChild(a);
+        ul.appendChild(li);
+    });
 }
 
 
@@ -216,12 +217,9 @@ async function initRegisterPage() {
     };
 }
 
+
 /****************************************************
  * contact_list.html：連絡履歴一覧を取得して表示
- *
- * dateFrom ロジック（ローカル日付基準）:
- *   当日が 4/30 以前（月<=4）→ 前年の 4/1
- *   当日が 5/1  以降（月>=5）→ 本年の 4/1
  ****************************************************/
 async function initContactListPage() {
 
@@ -231,19 +229,17 @@ async function initContactListPage() {
 
     await initLIFF();
 
-    restoreAuthCode();  // ★ ここでも復元する
+    restoreAuthCode();
 
     if (!AUTH_CODE) {
         loading.innerHTML = "<p>認証情報がありません。</p>";
         return;
     }
 
-    // ローカル日付で月を判定
     const now = new Date();
-    const localMonth = now.getMonth() + 1; // 1〜12
+    const localMonth = now.getMonth() + 1;
     const localYear  = now.getFullYear();
 
-    // 4月以前（1〜4月）は前年度の4/1、5月以降は本年の4/1
     const fromYear = localMonth <= 4 ? localYear - 1 : localYear;
     const dateFrom = `${fromYear}-04-01`;
 
@@ -272,22 +268,16 @@ async function initContactListPage() {
     });
 }
 
+
 /****************************************************
- * contact_form.html（統一フォーム）から利用するAPIラッパ
+ * contact_form.html から利用するAPIラッパ
  ****************************************************/
 async function apiGetKids() {
-    return await callApi({
-        action: "get_kids",
-        authCode: AUTH_CODE
-    });
+    return await callApi({ action: "get_kids", authCode: AUTH_CODE });
 }
 
 async function apiGetCalendar(params) {
-    return await callApi({
-        action: "get_calendar",
-        authCode: AUTH_CODE,
-        ...params
-    });
+    return await callApi({ action: "get_calendar", authCode: AUTH_CODE, ...params });
 }
 
 async function apiSubmitContact(payload) {
@@ -301,23 +291,18 @@ async function apiSubmitContact(payload) {
  * ページ判定 & 初期化実行
  ****************************************************/
 document.addEventListener("DOMContentLoaded", async () => {
-
     const path = location.pathname;
 
     try {
         if (path.endsWith("index.html") || path.endsWith("/")) {
-            // しっかり await して完了を待つ
             await initIndexPage();
-        }
-        else if (path.endsWith("register_guardian.html")) {
+        } else if (path.endsWith("register_guardian.html")) {
             await initRegisterPage();
-        }
-        else if (path.endsWith("contact_list.html")) {
+        } else if (path.endsWith("contact_list.html")) {
             await initContactListPage();
         }
     } catch (err) {
         console.error("Initialization failed:", err);
-        // エラーが見えるように loading 領域に表示
         const loading = document.getElementById("loading");
         if (loading) {
             loading.innerHTML = `<p>初期化エラーが発生しました。<br>${err.message}</p>`;
@@ -325,19 +310,16 @@ document.addEventListener("DOMContentLoaded", async () => {
     }
 });
 
-// ===== 他JS（contact_form.js 等）から使うために公開 =====
+
+// ===== 他JS から公開 =====
 window.restoreAuthCode = restoreAuthCode;
 window.callApi = callApi;
 window.apiGetKids = apiGetKids;
 window.apiGetCalendar = apiGetCalendar;
 window.apiSubmitContact = apiSubmitContact;
+window.storageKey = storageKey;  // ★ contact_form.js 等からも使えるよう公開
 
-// AUTH_CODE は参照・更新されるので getter/setter で公開
 Object.defineProperty(window, "AUTH_CODE", {
-  get() {
-    return AUTH_CODE;
-  },
-  set(v) {
-    AUTH_CODE = v;
-  }
+    get() { return AUTH_CODE; },
+    set(v) { AUTH_CODE = v; }
 });
